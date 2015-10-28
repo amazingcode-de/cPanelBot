@@ -58,7 +58,7 @@ public class Bot {
 				.build();
 
 		httpclient = HttpClients.custom()
-				.setUserAgent(useragent)
+				.setUserAgent(this.useragent)
 				.setDefaultCookieStore(cookieStore)
 				.setRedirectStrategy(new LaxRedirectStrategy())
 				.setDefaultCookieSpecRegistry(r)
@@ -84,7 +84,7 @@ public class Bot {
 		nvps.add(new BasicNameValuePair("pass", this.password));
 		nvps.add(new BasicNameValuePair("login", ""));
 		httpPost.setEntity(new UrlEncodedFormEntity(nvps));
-		httpPost.addHeader("Referer", "http://x3demoa.cpx3demo.com:2082/");
+		httpPost.addHeader("Referer", this.host);
 
 		CloseableHttpResponse response2 = httpclient.execute(httpPost);
 	
