@@ -1,7 +1,7 @@
 /**
  * @author http://www.amazingcode.de
- * @version 1.0
- * created on 2015-10-27
+ * @version 1.0.1
+ * created on 2015-10-28
  */
 
 package de.amazingcode;
@@ -14,12 +14,14 @@ import org.apache.http.HttpEntity;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.CookieStore;
-import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.config.Registry;
+import org.apache.http.config.RegistryBuilder;
+import org.apache.http.cookie.CookieSpecProvider;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
@@ -29,26 +31,39 @@ import org.apache.http.util.EntityUtils;
 
 public class Bot {
 	private CookieStore cookieStore;
-	private RequestConfig globalConfig;
+	private RequestConfig requestConfig;
 	private CloseableHttpClient httpclient;
 	
 	private final String host;
 	private final String username;
 	private final String password;
 	
+	private final String useragent;
+	
 	public Bot(String host, String username, String password) {
 		this.host = host;
 		this.username = username;
 		this.password = password;
 		
+		this.useragent = "Mozilla/5.0 (Windows NT 10.0; WOW64; rv:41.0) Gecko/20100101 Firefox/41.0";
+		
+		Registry<CookieSpecProvider> r = RegistryBuilder.<CookieSpecProvider>create()
+		        .register("easy", new EasySpecProvider())
+		        .build();
+		
 		cookieStore = new BasicCookieStore();
-
-		globalConfig = RequestConfig.custom().setCookieSpec(CookieSpecs.DEFAULT).build();
+		
+		requestConfig = RequestConfig.custom()
+				.setCookieSpec("easy")
+				.build();
 
 		httpclient = HttpClients.custom()
-				.setUserAgent("Mozilla/5.0 (Windows NT 10.0; WOW64; rv:41.0) Gecko/20100101 Firefox/41.0")
-				.setDefaultCookieStore(cookieStore).setRedirectStrategy(new LaxRedirectStrategy())
-				.setDefaultRequestConfig(globalConfig).build();
+				.setUserAgent(useragent)
+				.setDefaultCookieStore(cookieStore)
+				.setRedirectStrategy(new LaxRedirectStrategy())
+				.setDefaultCookieSpecRegistry(r)
+				.setDefaultRequestConfig(requestConfig)
+				.build();
 	}
 
 	public boolean login() throws ClientProtocolException, IOException {
