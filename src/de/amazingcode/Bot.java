@@ -21,6 +21,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.cookie.CookieSpecProvider;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -61,6 +62,7 @@ public class Bot {
 				.setUserAgent(this.useragent)
 				.setDefaultCookieStore(cookieStore)
 				.setRedirectStrategy(new LaxRedirectStrategy())
+				.setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE)
 				.setDefaultCookieSpecRegistry(r)
 				.setDefaultRequestConfig(requestConfig)
 				.build();
