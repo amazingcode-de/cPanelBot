@@ -6,6 +6,7 @@
 
 package de.amazingcode;
 
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 public class Workflow {
@@ -34,22 +35,28 @@ public class Workflow {
 			System.exit(-1); //terminate, since no further actions allowed without login
 		}
 		
+		TimeUnit.SECONDS.sleep(2);
+		
 		try {
 			bot.createDatabase(dbName);
 		} catch(Exception e) {
 			LOGGER.severe(e.getMessage());
 		}
 		
+		TimeUnit.SECONDS.sleep(2);
+		
 		try {
 			bot.createDatabaseUser(dbUser, dbPassword);
 		} catch(Exception e) {
-			System.err.println(e.getMessage());
+			LOGGER.severe(e.getMessage());
 		}
+		
+		TimeUnit.SECONDS.sleep(2);
 		
 		try {
 			bot.addUserToDatabase(username+"_"+dbUser, username+"_"+dbName);
 		} catch(Exception e) {
-			System.err.println(e.getMessage());
+			LOGGER.severe(e.getMessage());
 		}
 	}
 }
