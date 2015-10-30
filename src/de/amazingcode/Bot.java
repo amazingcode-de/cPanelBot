@@ -1,6 +1,6 @@
 /**
  * @author http://www.amazingcode.de
- * @version 1.2
+ * @version 1.2.1
  * created on 2015-10-30
  */
 
@@ -33,6 +33,7 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 
 public class Bot {
 	private final static Logger LOGGER = Logger.getLogger(Bot.class.getName());
@@ -117,14 +118,15 @@ public class Bot {
 			}
 			HttpEntity entity = response.getEntity();
 			String html = EntityUtils.toString(entity);
-			if (html.indexOf("wurde hinzugefügt") < 0) {
-				Document doc = Jsoup.parse(html);
-				String errorMessage = doc.getElementById("addbErrorMsg").text();
-				throw new Exception("Database Creation failed. (" + errorMessage + ")");
-			}
 			EntityUtils.consume(entity);
+			
+			Document doc = Jsoup.parse(html);
+			Element errorMessage = doc.getElementById("addbErrorMsg");
+			if(errorMessage != null ) {
+				throw new Exception("Database Creation failed. (" + errorMessage.text() + ")");
+			}
+			
 			LOGGER.info("Database " + dbName + " created successfully.");
-
 		} finally {
 			response.close();
 		}
@@ -147,11 +149,14 @@ public class Bot {
 			}
 			HttpEntity entity = response.getEntity();
 			String html = EntityUtils.toString(entity);
-			if (html.indexOf("erfolgreich") < 0) {
-				Document doc = Jsoup.parse(html);
-				String errorMessage = doc.getElementById("adduserErrorMsg").text();
-				throw new Exception("Database User Creation failed. (" + errorMessage + ")");
+			EntityUtils.consume(entity);
+			
+			Document doc = Jsoup.parse(html);
+			Element errorMessage = doc.getElementById("adduserErrorMsg");
+			if(errorMessage != null ) {
+				throw new Exception("Database Creation failed. (" + errorMessage.text() + ")");
 			}
+			
 			EntityUtils.consume(entity);
 			LOGGER.info("Database User " + dbUser + " created successfully.");
 

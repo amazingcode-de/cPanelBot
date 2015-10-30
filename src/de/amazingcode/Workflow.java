@@ -1,6 +1,6 @@
 /**
  * @author http://www.amazingcode.de
- * @version 1.2
+ * @version 1.2.1
  * created on 2015-10-30
  */
 
