@@ -1,7 +1,7 @@
 /**
  * @author http://www.amazingcode.de
- * @version 1.1
- * created on 2015-10-29
+ * @version 1.2
+ * created on 2015-10-30
  */
 
 package de.amazingcode;
@@ -47,12 +47,11 @@ public class Bot {
 
 	private String userPath;
 
-	public Bot(String host, String username, String password) {
+	public Bot(String host, String username, String password, String useragent) {
 		this.host = host;
 		this.username = username;
 		this.password = password;
-
-		this.useragent = "Mozilla/5.0 (Windows NT 10.0; WOW64; rv:41.0) Gecko/20100101 Firefox/41.0";
+		this.useragent = useragent;
 
 		Registry<CookieSpecProvider> r = RegistryBuilder.<CookieSpecProvider> create()
 				.register("easy", new EasySpecProvider()).build();
@@ -70,12 +69,7 @@ public class Bot {
 		// get initial cookies
 		HttpGet httpGet = new HttpGet(this.host);
 		CloseableHttpResponse response1 = httpclient.execute(httpGet);
-		try {
-			HttpEntity entity1 = response1.getEntity();
-			EntityUtils.consume(entity1);
-		} finally {
-			response1.close();
-		}
+		response1.close();
 
 		// actual login
 		HttpPost httpPost = new HttpPost(this.host + "login/");
@@ -99,8 +93,9 @@ public class Bot {
 			List<URI> redirectLocations = context.getRedirectLocations();
 			String location = URIUtils.resolve(httpPost.getURI(), target, redirectLocations).toString();
 			int start = location.indexOf("/", this.host.length() - 1) + 1;
-			int end = location.indexOf("/", start) + 1;
+			int end = location.lastIndexOf("/") + 1;
 			this.userPath = location.substring(start, end);
+			LOGGER.info("Extracted User Path " + this.userPath + " successfully.");
 			LOGGER.info("Logged in as " + this.username + " successfully.");
 		} finally {
 			response2.close();
@@ -108,7 +103,7 @@ public class Bot {
 	}
 
 	public void createDatabase(String dbName) throws Exception {
-		HttpPost httpPost = new HttpPost(this.host + this.userPath + "frontend/paper_lantern/sql/addb.html");
+		HttpPost httpPost = new HttpPost(this.host + this.userPath + "sql/addb.html");
 		List<NameValuePair> nvps = new ArrayList<NameValuePair>();
 		nvps.add(new BasicNameValuePair("db", dbName));
 		httpPost.setEntity(new UrlEncodedFormEntity(nvps));
@@ -134,9 +129,9 @@ public class Bot {
 			response.close();
 		}
 	}
-	
+
 	public void createDatabaseUser(String dbUser, String dbPassword) throws Exception {
-		HttpPost httpPost = new HttpPost(this.host + this.userPath + "frontend/paper_lantern/sql/adduser.html");
+		HttpPost httpPost = new HttpPost(this.host + this.userPath + "sql/adduser.html");
 		List<NameValuePair> nvps = new ArrayList<NameValuePair>();
 		nvps.add(new BasicNameValuePair("pass", dbPassword));
 		nvps.add(new BasicNameValuePair("pass2", dbPassword));
@@ -160,6 +155,49 @@ public class Bot {
 			EntityUtils.consume(entity);
 			LOGGER.info("Database User " + dbUser + " created successfully.");
 
+		} finally {
+			response.close();
+		}
+	}
+
+	public void addUserToDatabase(String dbUser, String dbName) throws Exception {
+		HttpPost httpPost = new HttpPost(this.host + this.userPath + "sql/userrights.html");
+		List<NameValuePair> nvps = new ArrayList<NameValuePair>();
+		nvps.add(new BasicNameValuePair("user", dbUser));
+		nvps.add(new BasicNameValuePair("db", dbName));
+		httpPost.setEntity(new UrlEncodedFormEntity(nvps));
+		httpPost.addHeader("Referer", this.host);
+
+		CloseableHttpResponse response = httpclient.execute(httpPost);
+
+		try {
+			if (response.getStatusLine().getStatusCode() != 200) {
+				throw new Exception("Add User " + dbUser + " to database " + dbName + " failed.");
+			}
+		} finally {
+			response.close();
+		}
+		
+		String[] privileges = {"ALTER", "ALTER ROUTINE", "CREATE", "CREATE ROUTINE", "CREATE TEMPORARY TABLES",
+				"CREATE VIEW", "DELETE", "DROP", "EVENT", "EXECUTE", "INDEX", "INSERT", "LOCK TABLES",
+				"REFERENCES", "SELECT", "SHOW VIEW", "TRIGGER", "UPDATE"};
+		
+		httpPost = new HttpPost(this.host + this.userPath + "sql/addusertodb.html");
+		nvps.add(new BasicNameValuePair("ALL", "ALL"));
+		nvps.add(new BasicNameValuePair("update", ""));
+		for(String privilege: privileges) {
+			nvps.add(new BasicNameValuePair("privileges", privilege));
+		}	
+		httpPost.setEntity(new UrlEncodedFormEntity(nvps));
+		httpPost.addHeader("Referer", this.host);
+
+		response = httpclient.execute(httpPost);
+
+		try {
+			if (response.getStatusLine().getStatusCode() != 200) {
+				throw new Exception("Add User " + dbUser + " to database " + dbName + " failed.");
+			}
+			LOGGER.info("Added User " + dbUser + " to database " + dbName + " successfully.");
 		} finally {
 			response.close();
 		}
